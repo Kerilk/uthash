@@ -87,6 +87,18 @@ do {                                                                            
 #define SPLAY_KEYCMP(a,b,n) utsplay_memcmp(a,b,n)
 #endif
 
+#ifndef SPLAY_INIT
+#define SPLAY_INIT(e)
+#endif
+
+#ifndef SPLAY_PROCESS
+#define SPLAY_PROCESS(e)
+#endif
+
+#ifndef SPLAY_DEINIT
+#define SPLAY_DEINIT(e)
+#endif
+
 /*
  * This file contains macros to manipulate splaytrees.
  *
@@ -122,25 +134,34 @@ do { \
     _sp_z = tree; \
     _sp_p = NULL; \
     int _sp_cmp = 0; \
+    int _sp_found = 0; \
     while (_sp_z) { \
         _sp_p = _sp_z; \
-	if ((_sp_cmp = SPLAY_KEYCMP(SPLAY_KEY(_sp_z, key), key_val, sz)) < 0) \
+        _sp_cmp = SPLAY_KEYCMP(SPLAY_KEY(_sp_z, key), key_val, sz); \
+	if (_sp_cmp < 0) \
             _sp_z = SPLAY_RIGHT(_sp_z, right); \
-        else \
+        else if (_sp_cmp > 0)  \
             _sp_z = SPLAY_LEFT(_sp_z, left); \
+        else { \
+            _sp_found = 1; \
+            break; \
+        } \
     } \
-    _sp_z = (SPDECLTYPE(tree))utsplay_malloc(sizeof(*tree)); \
-    if (!_sp_z) \
-        utsplay_oom(); \
-    utsplay_bzero(_sp_z, sizeof(*tree)); \
-    memcpy(SPLAY_KEY(_sp_z, key), key_val, sz); \
-    SPLAY_PARENT(_sp_z, parent) = _sp_p; \
-    if (!_sp_p) \
-        tree = _sp_z; \
-    else if (_sp_cmp < 0) \
-        SPLAY_RIGHT(_sp_p, right) = _sp_z; \
-    else \
-        SPLAY_LEFT(_sp_p, left) = _sp_z; \
+    if (!_sp_found) { \
+        _sp_z = (SPDECLTYPE(tree))utsplay_malloc(sizeof(*tree)); \
+        if (!_sp_z) \
+            utsplay_oom(); \
+        utsplay_bzero(_sp_z, sizeof(*tree)); \
+        memcpy(SPLAY_KEY(_sp_z, key), key_val, sz); \
+        SPLAY_PARENT(_sp_z, parent) = _sp_p; \
+        SPLAY_INIT(_sp_z); \
+        if (!_sp_p) \
+            tree = _sp_z; \
+        else if (_sp_cmp < 0) \
+            SPLAY_RIGHT(_sp_p, right) = _sp_z; \
+        else \
+            SPLAY_LEFT(_sp_p, left) = _sp_z; \
+    } \
     SPLAY_SPLAY_2(tree, _sp_z, left, right, parent); \
 } while (0)
 
@@ -195,6 +216,8 @@ do { \
         SPLAY_RIGHT(_splr_p, right) = _splr_r; \
     SPLAY_LEFT(_splr_r, left) = node; \
     SPLAY_PARENT(node, parent) = _splr_r; \
+    SPLAY_PROCESS(node); \
+    SPLAY_PROCESS(_splr_r); \
 } while (0)
 
 #define SPLAY_RIGHT_ROTATE(tree, node) \
@@ -218,6 +241,8 @@ do { \
         SPLAY_RIGHT(_sprr_p, right) = _sprr_l; \
     SPLAY_RIGHT(_sprr_l, right) = node; \
     SPLAY_PARENT(node, parent) = _sprr_l; \
+    SPLAY_PROCESS(node); \
+    SPLAY_PROCESS(_sprr_l); \
 } while (0)
 
 #define SPLAY_FIND(tree, key_val, sz, out) \
@@ -248,6 +273,7 @@ do { \
 #define SPLAY_ERASE_2(tree, key_val, sz, key, left, right, parent) \
 do { \
     SPDECLTYPE(tree) _spe_z; \
+    SPDECLTYPE(tree) _spe_p; \
     SPLAY_FIND_2(tree, key_val, sz, key, left, right, parent, _spe_z); \
     if (_spe_z) { \
         if (!SPLAY_LEFT(_spe_z, left)) \
@@ -259,14 +285,19 @@ do { \
             _spe_l = SPLAY_RIGHT(_spe_z, right); \
             while (SPLAY_LEFT(_spe_l, left)) \
                 _spe_l = SPLAY_LEFT(_spe_l, left); \
-            if (SPLAY_PARENT(_spe_l, parent) != _spe_z) { \
+            _spe_p = SPLAY_PARENT(_spe_l, parent); \
+            if (_spe_p != _spe_z) { \
                 SPLAY_REPLACE_2(tree, _spe_l, SPLAY_RIGHT(_spe_l, right), left, right, parent); \
                 SPLAY_RIGHT(_spe_l, right) = SPLAY_RIGHT(_spe_z, right); \
                 SPLAY_PARENT(SPLAY_RIGHT(_spe_l, right), parent) = _spe_l; \
+                SPLAY_PROCESS(_spe_p); \
+            	while((_spe_p = SPLAY_PARENT(_spe_p, parent)) != _spe_l) \
+                	SPLAY_PROCESS(_spe_p); \
             } \
             SPLAY_REPLACE_2(tree, _spe_z, _spe_l, left, right, parent); \
             SPLAY_LEFT(_spe_l, left) = SPLAY_LEFT(_spe_z, left); \
             SPLAY_PARENT(SPLAY_LEFT(_spe_l, left), parent) = _spe_l; \
+            SPLAY_PROCESS(_spe_l); \
         } \
         utsplay_free(_spe_z, sizeof(*tree)); \
     } \
@@ -282,10 +313,13 @@ do { \
         _spr_p = SPLAY_PARENT(u, parent); \
         if (!_spr_p) \
             tree = v; \
-        else if (SPLAY_LEFT(_spr_p, left) == u) \
+        else if (SPLAY_LEFT(_spr_p, left) == u) {\
             SPLAY_LEFT(_spr_p, left) = v; \
-        else \
+            SPLAY_PROCESS(_spr_p); \
+        } else { \
             SPLAY_RIGHT(_spr_p, right) = v; \
+            SPLAY_PROCESS(_spr_p); \
+        } \
         if (v) \
             SPLAY_PARENT(v, parent) = _spr_p; \
     } \
@@ -312,6 +346,7 @@ do { \
                 else \
                     SPLAY_RIGHT(_spc_p, right) = NULL; \
             } \
+            SPLAY_DEINIT(_spc_z); \
             utsplay_free(_spc_z, sizeof(*tree)); \
             _spc_z = _spc_p; \
         } \
