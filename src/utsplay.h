@@ -124,10 +124,36 @@ do {                                                                            
 
 /* See https://en.wikipedia.org/wiki/Splay_tree */
 
+#define SPLAY_ADD(tree, key_val, sz, node) \
+    SPLAY_ADD_2(tree, key_val, sz, node, key, left, right, parent)
+
+#define SPLAY_ADD_2(tree, key_val, sz, node, key, left, right, parent) \
+    SPLAY_INSERT_ADD(SPLAY_ADD_CREATE, tree, key_val, sz, node, key, left, right, parent)
+
+#define SPLAY_ADD_CREATE(tree, n, node, key, left, right, parent) \
+do { \
+    n = node; \
+    SPLAY_RIGHT(n, right) = NULL; \
+    SPLAY_LEFT(n, left) = NULL; \
+    SPLAY_PARENT(n, parent) = NULL; \
+    node = NULL; \
+} while(0)
+
 #define SPLAY_INSERT(tree, key_val, sz) \
     SPLAY_INSERT_2(tree, key_val, sz, key, left, right, parent)
 
 #define SPLAY_INSERT_2(tree, key_val, sz, key, left, right, parent) \
+    SPLAY_INSERT_ADD(SPLAY_INSERT_CREATE, tree, key_val, sz, NULL, key, left, right, parent)
+
+#define SPLAY_INSERT_CREATE(tree, n, node, key, left, right, parent) \
+do { \
+    n = (SPDECLTYPE(tree))utsplay_malloc(sizeof(*tree)); \
+    if (!n) \
+        utsplay_oom(); \
+    utsplay_bzero(n, sizeof(*tree)); \
+} while(0)
+
+#define SPLAY_INSERT_ADD(create_macro, tree, key_val, sz, node, key, left, right, parent) \
 do { \
     SPDECLTYPE(tree) _sp_z; \
     SPDECLTYPE(tree) _sp_p; \
@@ -148,10 +174,7 @@ do { \
         } \
     } \
     if (!_sp_found) { \
-        _sp_z = (SPDECLTYPE(tree))utsplay_malloc(sizeof(*tree)); \
-        if (!_sp_z) \
-            utsplay_oom(); \
-        utsplay_bzero(_sp_z, sizeof(*tree)); \
+        create_macro(tree, _sp_z, node, key, left, right, parent); \
         memcpy(SPLAY_KEY(_sp_z, key), key_val, sz); \
         SPLAY_PARENT(_sp_z, parent) = _sp_p; \
         SPLAY_INIT(_sp_z); \
@@ -267,10 +290,32 @@ do { \
     } \
 } while(0)
 
+#define SPLAY_REMOVE(tree, key_val, sz, node) \
+    SPLAY_REMOVE_2(tree, key_val, sz, node, key, left, right, parent)
+
+#define SPLAY_REMOVE_2(tree, key_val, sz, node, key, left, right, parent) \
+    SPLAY_ERASE_REMOVE(SPLAY_REMOVE_DELETE, tree, key_val, sz, node, key, left, right, parent)
+
+#define SPLAY_REMOVE_DELETE(tree, n, node, left, right, parent) \
+do { \
+    SPLAY_PARENT(n, parent) = NULL; \
+    SPLAY_LEFT(n, left) = NULL; \
+    SPLAY_RIGHT(n, right) = NULL; \
+    node = n; \
+} while (0)
+
 #define SPLAY_ERASE(tree, key_val, sz) \
     SPLAY_ERASE_2(tree, key_val, sz, key, left, right, parent)
 
 #define SPLAY_ERASE_2(tree, key_val, sz, key, left, right, parent) \
+    SPLAY_ERASE_REMOVE(SPLAY_ERASE_DELETE, tree, key_val, sz, NULL, key, left, right, parent)
+
+#define SPLAY_ERASE_DELETE(tree, n, node, left, right, parent) \
+do { \
+    utsplay_free(_spe_z, sizeof(*tree)); \
+} while (0)
+
+#define SPLAY_ERASE_REMOVE(delete_macro, tree, key_val, sz, node, key, left, right, parent) \
 do { \
     SPDECLTYPE(tree) _spe_z; \
     SPDECLTYPE(tree) _spe_p; \
@@ -299,7 +344,7 @@ do { \
             SPLAY_PARENT(SPLAY_LEFT(_spe_l, left), parent) = _spe_l; \
             SPLAY_PROCESS(_spe_l); \
         } \
-        utsplay_free(_spe_z, sizeof(*tree)); \
+        delete_macro(tree, _spe_z, node, left, right, parent); \
     } \
 } while (0)
 
@@ -354,6 +399,7 @@ do { \
 } while(0)
 
 #define SPLAY_KEY(elt, key) (&((elt)->key))
+#define SPLAY_KEYPTR(elt, key) ((elt)->key)
 #define SPLAY_LEFT(elt, left) ((elt)->left)
 #define SPLAY_RIGHT(elt, right) ((elt)->right)
 #define SPLAY_PARENT(elt, parent) ((elt)->parent)
