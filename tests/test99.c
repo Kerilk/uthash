@@ -63,7 +63,6 @@ int main()
     }
     depth_first_print(tree);
     printf("---\n");
-    fseek(file, SEEK_SET, 0);
     for(i = 0; i < count; i += 4) {
         pNode = NULL;
         SPLAY_REMOVE_KEYPTR(tree, keys + i, sizeof(int), pNode);

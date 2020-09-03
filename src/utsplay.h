@@ -126,7 +126,7 @@ do {                                                                            
  * int main() {
  *      struct item *item;
  *      ... allocate and populate item ...
- *      SPLAY_ADD(tree, key, sizeof(int), item);
+ *      SPLAY_ADD(tree, item);
  * }
  * --------------------------------------------------
  *
