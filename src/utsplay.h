@@ -529,7 +529,7 @@ void * _splay_buffalloc2(void *pe) {
     stack.c == stack.sz ? ( \
         stack.arr = (SPDECLTYPE(&tree)) \
             utsplay_realloc(stack.arr, stack.sz * 2 * sizeof(void*)), \
-        (stack.arr ? 0 : utsplay_oom()), \
+        (stack.arr ? 0 : (utsplay_oom(), 0)), \
         stack.sz = stack.sz * 2) : 1 )
 
 #define splay_push_back_field(tree, stack, el, field) ( \
