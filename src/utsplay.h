@@ -66,6 +66,9 @@ do {                                                                            
 #ifndef utsplay_malloc
 #define utsplay_malloc(sz) malloc(sz)      /* malloc fcn                      */
 #endif
+#ifndef utsplay_realloc
+#define utsplay_realloc(ptr, sz) realloc(ptr, sz) /* realloc fcn                      */
+#endif
 #ifndef utsplay_free
 #define utsplay_free(ptr,sz) free(ptr)     /* free fcn                        */
 #endif
@@ -488,6 +491,78 @@ do { \
         } \
     } \
 } while(0)
+
+static inline
+void * _splay_buffalloc(void *pe) {
+    if (!pe)
+        return NULL;
+    void **mem = (void **)utsplay_malloc(10 * sizeof(void *));
+    if (!mem)
+        utsplay_oom();
+    *mem = pe;
+    return (void *)mem;
+}
+
+static inline
+void * _splay_buffalloc2(void *pe) {
+    if (!pe)
+        return NULL;
+    void **mem = (void **)utsplay_malloc(10 * sizeof(void *));
+    if (!mem)
+        utsplay_oom();
+    return (void *)mem;
+}
+
+#define splay_define_stack(tree) struct { \
+  SPDECLTYPE(tree) *arr; \
+  size_t c; \
+  size_t sz; }
+
+#define splay_init_stack(tree) { \
+    (SPDECLTYPE(&tree))_splay_buffalloc((void *)tree), \
+    (tree ? 1 : 0), (tree ? 10 : 0) }
+
+#define splay_deinit_stack(stack) ( \
+    utsplay_free(stack.arr, stack.sz * sizeof(void*)) )
+
+#define splay_maybe_realloc_stack(tree, stack) ( \
+    stack.c == stack.sz ? ( \
+        stack.arr = (SPDECLTYPE(&tree)) \
+            utsplay_realloc(stack.arr, stack.sz * 2 * sizeof(void*)), \
+        (stack.arr ? 0 : utsplay_oom()), \
+        stack.sz = stack.sz * 2) : 1 )
+
+#define splay_push_back_field(tree, stack, el, field) ( \
+  SPLAY_FIELD( el, field ) ? splay_push_back(stack, SPLAY_FIELD( el, field )) : 0 )
+
+#define splay_push_back(stack, el) (\
+    splay_maybe_realloc_stack(tree,stack), \
+    stack.arr[stack.c++] = el )
+
+#define splay_pop_back(stack) stack.arr[--(stack.c)]
+
+#define SPLAY_FOREACH_DFSPRE(tree, el) \
+    SPLAY_FOREACH_DFSPRE2(tree, el, left, right, parent)
+
+#define SPLAY_FOREACH_DFSPRE2(tree, el, left, right, parent) \
+for( splay_define_stack(tree) stack = splay_init_stack(tree); \
+     (stack.c ? 1 : (splay_deinit_stack(stack), 0)) && \
+         ( el = splay_pop_back(stack), 1 ); \
+     splay_push_back_field(tree, stack, el, right), \
+     splay_push_back_field(tree, stack, el, left))
+
+#define splay_init_stack2(tree, el) { \
+    (el = tree, (SPDECLTYPE(&tree))_splay_buffalloc((void *)tree)), \
+    0, tree ? 10 : 0 }
+
+#define SPLAY_FOREACH_DFSIN(tree, el) \
+    SPLAY_FOREACH_DFSIN2(tree, el, left, right, parent)
+
+#define SPLAY_FOREACH_DFSIN2(tree, el, left, right, parent) \
+for( splay_define_stack(tree) stack = splay_init_stack2(tree, el); \
+    ((stack.c || el) ? 1 : (splay_deinit_stack(stack), 0)); ) if (el) { \
+        splay_push_back(stack, el); el = SPLAY_LEFT(el, left); } \
+    else for(int _sp_i = 0; _sp_i < 1 && (el = splay_pop_back(stack), 1); _sp_i++, el = SPLAY_RIGHT(el, right))
 
 #define SPLAY_FIELD(elt, name) ((elt)->name)
 #define SPLAY_KEY(elt, key) (&((elt)->key))
