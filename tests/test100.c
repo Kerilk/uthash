@@ -12,12 +12,10 @@ typedef struct splay_elem_s {
     char *key;
 } splay_elem_t;
 
-void depth_first_print(splay_elem_t *elt) {
-    if (elt->left)
-        depth_first_print(elt->left);
-    if (elt->right)
-        depth_first_print(elt->right);
-    printf("%s\n", elt->key);
+void depth_first_print(splay_elem_t *tree) {
+    splay_elem_t *e = NULL;
+    SPLAY_FOREACH_DFSPOST(tree, e)
+        printf("%s\n", e->key);
 }
 
 int main()
