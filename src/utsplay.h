@@ -576,7 +576,7 @@ void * _splay_buffalloc2(void *pe) {
 
 #define splay_init_stack(tree) { \
     (SPDECLTYPEREF(tree))_splay_buffalloc((void *)tree), \
-    (SPDECLTYPE(tree))tree, (tree ? 1 : 0), (tree ? 10 : 0) }
+    (SPDECLTYPE(tree))tree, (size_t)(tree ? 1 : 0), (size_t)(tree ? 10 : 0) }
 
 #define splay_deinit_stack(stack) ( \
     utsplay_free(stack.arr, stack.sz * sizeof(void*)) )
@@ -618,7 +618,7 @@ for ( splay_define_stack(tree) _sp_stack = splay_init_stack(tree); \
 
 #define splay_init_stack2(tree, el) { \
     (el = tree, (SPDECLTYPEREF(tree))_splay_buffalloc2((void *)tree)), \
-    (SPDECLTYPE(tree))tree, 0, tree ? 10 : 0, 0 }
+    (SPDECLTYPE(tree))tree, 0, (size_t)(tree ? 10 : 0), 0 }
 
 #define SPLAY_FOREACH_DFSIN(tree, el) \
     SPLAY_FOREACH_DFSIN2(tree, el, left, right, parent)
@@ -638,7 +638,7 @@ for ( splay_define_stack2(tree) _sp2_stack = splay_init_stack2(tree, el); \
 
 #define splay_init_stack3(tree, el) { \
     (el = tree, (SPDECLTYPEREF(tree))_splay_buffalloc2((void *)tree)), \
-    0, tree ? 10 : 0, NULL, 0 }
+    0, (size_t)(tree ? 10 : 0), NULL, 0 }
 
 #define SPLAY_FOREACH_DFSPOST(tree, el) \
     SPLAY_FOREACH_DFSPOST2(tree, el, left, right, parent)

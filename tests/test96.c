@@ -20,6 +20,20 @@ void depth_first_print(splay_elem_t *tree) {
     }
 }
 
+void depth_first_pre_print(splay_elem_t *tree) {
+    splay_elem_t *e = NULL;
+    SPLAY_FOREACH_DFSPRE(tree, e) {
+        printf("%d\n", e->key);
+    }
+}
+
+void depth_first_in_print(splay_elem_t *tree) {
+    splay_elem_t *e = NULL;
+    SPLAY_FOREACH_DFSIN(tree, e) {
+        printf("%d\n", e->key);
+    }
+}
+
 int main()
 {
     splay_elem_t *tree = NULL;
