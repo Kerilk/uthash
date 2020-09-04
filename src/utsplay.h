@@ -585,7 +585,7 @@ struct _sp_stack_s {
 
 #define splay_maybe_realloc_stack(tree, stack) ( \
     stack.c == stack.sz ? ( \
-        stack.arr = utsplay_realloc(stack.arr, stack.sz * 2 * sizeof(void*)), \
+        stack.arr = (void**)utsplay_realloc(stack.arr, stack.sz * 2 * sizeof(void*)), \
         (stack.arr ? 0 : (utsplay_oom(), 0)), \
         stack.sz = stack.sz * 2) : 1 )
 
@@ -605,8 +605,8 @@ struct _sp_stack_s {
 
 #define SPLAY_FOREACH_DFSPRE2(tree, el, left, right, parent) \
 for ( struct _sp_stack_s _sp_stack = splay_init_stack(tree); \
-     (_sp_stack.c ? 1 : (splay_deinit_stack(_sp_stack), SPLAY_ASSIGN2(tree, _sp_stack._sp_tree_sv), 0)) && \
-         ( SPLAY_ASSIGN2(el, splay_pop_back(_sp_stack)), 1 ); \
+     (_sp_stack.c ? 1 : (splay_deinit_stack(_sp_stack), SPLAY_ASSIGN2(tree, (SPDECLTYPE(tree))(_sp_stack._sp_tree_sv)), 0)) && \
+         ( SPLAY_ASSIGN2(el, (SPDECLTYPE(tree))splay_pop_back(_sp_stack)), 1 ); \
      splay_push_back_field(tree, _sp_stack, el, right), \
      splay_push_back_field(tree, _sp_stack, el, left))
 
@@ -627,9 +627,9 @@ struct _sp_stack2_s {
 
 #define SPLAY_FOREACH_DFSIN2(tree, el, left, right, parent) \
 for ( struct _sp_stack2_s _sp2_stack = splay_init_stack2(tree, el); \
-    ((_sp2_stack.c || el) ? 1 : (splay_deinit_stack(_sp2_stack), SPLAY_ASSIGN2(tree, _sp2_stack._sp_tree_sv), 0)); ) if (el) { \
+    ((_sp2_stack.c || el) ? 1 : (splay_deinit_stack(_sp2_stack), SPLAY_ASSIGN2(tree, (SPDECLTYPE(tree))(_sp2_stack._sp_tree_sv)), 0)); ) if (el) { \
         splay_push_back(_sp2_stack, el); SPLAY_ASSIGN2(el, SPLAY_LEFT(tree, el, left)); } \
-    else for (_sp2_stack.i = 0; _sp2_stack.i < 1 && (SPLAY_ASSIGN2(el, splay_pop_back(_sp2_stack)), 1); _sp2_stack.i++, SPLAY_ASSIGN2(el, SPLAY_RIGHT(tree, el, right)))
+    else for (_sp2_stack.i = 0; _sp2_stack.i < 1 && (SPLAY_ASSIGN2(el, (SPDECLTYPE(tree))splay_pop_back(_sp2_stack)), 1); _sp2_stack.i++, SPLAY_ASSIGN2(el, SPLAY_RIGHT(tree, el, right)))
 
 struct _sp_stack3_s {
     void **arr;
@@ -650,8 +650,8 @@ struct _sp_stack3_s {
 for ( struct _sp_stack3_s _sp3_stack = splay_init_stack3(tree, el); \
     ((_sp3_stack.c || el) ? 1 : (splay_deinit_stack(_sp3_stack), 0)); ) if (el) { \
         splay_push_back(_sp3_stack, el); SPLAY_ASSIGN2(el, SPLAY_LEFT(tree, el, left));} \
-    else if ((SPLAY_ASSIGN2(el, splay_peek_back(_sp3_stack)), SPLAY_RIGHT(tree, el, right)) && (char*)SPLAY_RIGHT(tree, el, right) != (char*)_sp3_stack.last) { SPLAY_ASSIGN2(el, SPLAY_RIGHT(tree, el, right)); } \
-         else for (_sp3_stack.i = 0; _sp3_stack.i < 1; _sp3_stack.i++, _sp3_stack.last = splay_pop_back(_sp3_stack), el = NULL)
+    else if ((SPLAY_ASSIGN2(el, (SPDECLTYPE(tree))splay_peek_back(_sp3_stack)), SPLAY_RIGHT(tree, el, right)) && (char*)SPLAY_RIGHT(tree, el, right) != (char*)_sp3_stack.last) { SPLAY_ASSIGN2(el, SPLAY_RIGHT(tree, el, right)); } \
+         else for (_sp3_stack.i = 0; _sp3_stack.i < 1; _sp3_stack.i++, _sp3_stack.last = (SPDECLTYPE(tree))splay_pop_back(_sp3_stack), el = NULL)
 
 #ifdef NO_DECLTYPE
 #define SPLAY_FIELD_ASSIGN(tree, elt, name, val) (*(char **)(&tree) = (char*)elt, *(char**)&((tree)->name) = (char *)val)
